@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package qr;
+
+service QRService {
+  rpc GenerateQR (GenerateQRRequest) returns (GenerateQRResponse);
+}
+
+message Metadata {
+  string email = 1;
+  string phone = 2;
+}
+
+message GenerateQRRequest {
+  string hotel_id = 1;
+  string routeKey = 2;
+  string referenceId = 3;
+  string externalUrl = 4;
+  Metadata metadata = 5;
+}
+
+message GenerateQRResponse {
+  string qr_image_url = 1;
+}

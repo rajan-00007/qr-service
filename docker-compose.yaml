@@ -1,0 +1,15 @@
+version: '3.0'
+services:
+  app:
+    container_name: qrservice
+    restart: always
+    build:
+      context: .
+      args:
+        - TAG=${TAG}
+      dockerfile: Dockerfile
+    image: registry.heal.infoviz.co/${HARBOR_PROJECT}/qrservice:${TAG}
+    ports:
+      - "3000:3000"  
+    env_file:
+      - .env
