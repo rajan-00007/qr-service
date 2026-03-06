@@ -98,10 +98,10 @@ jobs:
                   git config --global user.name "${{ secrets.GITOPS_USERNAME }}"
 
                   # Update only the image tag in the Deployment
-                  sed -i "s+registry.heal.infoviz.co/.*/qrservice:.*+registry.heal.infoviz.co/${{ secrets.HARBOR_PROJECT_BACKEND}}/qrservice:${TAG}+g" qr-service.yaml
+                  sed -i "s+registry.heal.infoviz.co/.*/qrservice:.*+registry.heal.infoviz.co/${{ secrets.HARBOR_PROJECT_BACKEND}}/qrservice:${TAG}+g" qr-service-backend.yaml
 
                   # Commit and push changes
-                  git add qr-service.yaml
+                  git add qr-service-backend.yaml
                   git commit -m "chore: Update qr service image tag to ${TAG}"
                   git push origin main
               env:
