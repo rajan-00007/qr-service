@@ -1,4 +1,3 @@
-version: '3.0'
 services:
   app:
     container_name: qrservice
@@ -6,9 +5,9 @@ services:
     build:
       context: .
       args:
-        - TAG=${TAG}
+        - TAG=${TAG:-latest}
       dockerfile: Dockerfile
-    image: registry.heal.infoviz.co/${HARBOR_PROJECT}/qrservice:${TAG}
+    image: registry.heal.infoviz.co/${HARBOR_PROJECT:-qr-service}/qrservice:${TAG:-latest}
     ports:
       - "3000:3000"  
     env_file:

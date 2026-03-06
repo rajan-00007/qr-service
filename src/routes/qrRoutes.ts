@@ -4,6 +4,6 @@ import { authenticateToken } from "../middlewares/authMiddleware";
 
 const router = Router();
 
-router.post("/create", authenticateToken, createQRController);
+router.post("/create", createQRController);
 
 export default router;

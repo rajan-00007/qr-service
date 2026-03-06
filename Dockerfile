@@ -3,38 +3,40 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install dependencies needed for build
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    cairo-dev \
+    pango-dev \
+    jpeg-dev \
+    giflib-dev
+
 COPY package*.json ./
 RUN npm install
 
-# Copy source code and build
 COPY . .
 RUN npm run build
 RUN npm prune --production
 
+
 # --- Production Stage ---
-FROM alpine:latest
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Install Node.js runtime (no npm, no yarn)
-RUN apk add --no-cache nodejs && \
-    addgroup -S nodejs && adduser -S nodejs -G nodejs && \
-    chown nodejs:nodejs /app
+RUN apk add --no-cache \
+    cairo \
+    pango \
+    jpeg \
+    giflib
 
-# Switch to non-root user
-USER nodejs
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src/grpc/*.proto ./dist/grpc/
+COPY --from=builder /app/src/assets ./dist/assets
+COPY .env ./
 
-# Copy built app and dependencies
-COPY --chown=nodejs:nodejs --from=builder /app/node_modules ./node_modules
-COPY --chown=nodejs:nodejs --from=builder /app/dist ./dist
-
-# Copy env file
-COPY --chown=nodejs:nodejs .env ./
-
-# Expose app port
 EXPOSE 3000
 
-# Start app
 CMD ["node", "dist/server.js"]
-
