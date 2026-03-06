@@ -38,5 +38,6 @@ COPY --from=builder /app/src/assets ./dist/assets
 COPY .env ./
 
 EXPOSE 3000
+EXPOSE 50051
 
 CMD ["node", "dist/server.js"]

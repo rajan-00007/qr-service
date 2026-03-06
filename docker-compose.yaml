@@ -9,6 +9,7 @@ services:
       dockerfile: Dockerfile
     image: registry.heal.infoviz.co/${HARBOR_PROJECT:-qr-service}/qrservice:${TAG:-latest}
     ports:
-      - "3000:3000"  
+      - "3000:3000"
+      - "50051:50051"
     env_file:
       - .env
