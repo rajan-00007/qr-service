@@ -2,7 +2,7 @@ import QRCode from "qrcode";
 import { createCanvas, loadImage } from "canvas";
 import path from "path";
 
-let cachedLogoImg: any = null;
+export let cachedLogoImg: any = null; // exported so test can mutate it
 const logoPath = path.join(__dirname, "../assets/logo.png");
 loadImage(logoPath).then(img => { cachedLogoImg = img; }).catch(() => { });
 

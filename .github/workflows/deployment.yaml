@@ -1,117 +1,132 @@
 name: Build and Deploy QR Service Docker Image
 
 on:
-    push:
-        branches:
-            - main
+  push:
+    branches:
+      - main
 
 jobs:
-    build:
-        name: Build and Push Docker Image
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout repository
-              id: checkout
-              uses: actions/checkout@v5
-              with:
-                  fetch-depth: 0
+  build:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        id: checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth:
+            0
 
-            - name: Set up Docker Buildx
-              id: setup_buildx
-              uses: docker/setup-buildx-action@v3
+      - name: SonarQube Scan
+        id: sonarqube_scan
+        uses: SonarSource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.AUTH_SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
-            - name: Install Docker Compose
-              run: |
-                  sudo apt-get update
-                  sudo apt-get install -y docker-compose
+      # Uncomment to fail the job if Quality Gate fails
+      - uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.AUTH_SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
-            - name: Login to Harbor
-              id: login_harbor
-              env:
-                  HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
-              run: echo $HARBOR_PASSWORD | docker login ${{ secrets.HARBOR_URL }} -u ${{ secrets.HARBOR_USERNAME }} --password-stdin
+      - name: Set up Docker Buildx
+        id: setup_buildx
+        uses: docker/setup-buildx-action@v3
 
-            - name: Set environment variables
-              run: |
-                  echo "TAG=${GITHUB_SHA:0:7}" >> $GITHUB_ENV
-                  echo "HARBOR_IMAGE=${{ secrets.HARBOR_URL }}/${{ secrets.HARBOR_PROJECT_BACKEND }}/qrservice" >> $GITHUB_ENV
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
 
-            - name: Build Docker images
-              id: build_docker_images
-              run: |
-                  echo -e "PORT=${{ secrets.DEV_PORT }}\nGRPC_PORT=${{ secrets.DEV_GRPC_PORT }}\nDB_USER=${{ secrets.DEV_POSTGRES_USER }}\nDB_PASSWORD=${{ secrets.DEV_POSTGRES_PASSWORD }}\nDB_HOST=${{ secrets.DEV_POSTGRES_HOST }}\nDB_PORT=${{ secrets.DEV_POSTGRES_PORT }}\nDB_NAME=${{ secrets.DEV_POSTGRES_DB }}\nSECRET_KEY=${{ secrets.DEV_JWT_SECRET }}\nMINIO_ENDPOINT=${{ secrets.DEV_MINIO_AWS_ENDPOINT }}\nMINIO_PORT=${{ secrets.DEV_MINIO_PORT }}\nMINIO_USE_SSL=${{ secrets.DEV_MINIO_AWSL_SSL }}\nMINIO_ACCESS_KEY=${{ secrets.DEV_MINIO_AWS_ACCESS }}\nMINIO_SECRET_KEY=${{ secrets.DEV_MINIO_AWS_SECRET }}\nMINIO_BUCKET=${{ secrets.DEV_MINIO_BUCKET_NAME }}\nQR_BASE_URL=${{ secrets.DEV_QR_BASE_URL }}\nHARBOR_URL=${{ secrets.HARBOR_URL }}\nHARBOR_PASSWORD=${{ secrets.HARBOR_PASSWORD }}\nHARBOR_USERNAME=${{ secrets.HARBOR_USERNAME }}\nHARBOR_PROJECT=${{ secrets.HARBOR_PROJECT_BACKEND}}\nTAG=${{env.TAG}}" > .env
-                  echo "Building with TAG: ${{ env.TAG }}"
-                  echo "Image: ${HARBOR_URL}/${HARBOR_PROJECT}/qrservice:${{ env.TAG }}"
-                  docker-compose -f docker-compose.yaml build \
-                    --build-arg TAG=${{ env.TAG }}
-              env:
-                  HARBOR_URL: ${{ secrets.HARBOR_URL }}
-                  HARBOR_PROJECT: ${{ secrets.HARBOR_PROJECT_BACKEND}}
-                  HARBOR_USERNAME: ${{ secrets.HARBOR_USERNAME }}
-                  HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
-                  TAG: ${{ env.TAG }}
+      - name: Login to Harbor
+        id: login_harbor
+        env:
+          HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
+        run: echo $HARBOR_PASSWORD | docker login ${{ secrets.HARBOR_URL }} -u ${{ secrets.HARBOR_USERNAME }} --password-stdin
 
-            - name: Verify Docker image
-              id: verify_docker_image
-              run: docker images ${{ secrets.HARBOR_URL }}/${{ secrets.HARBOR_PROJECT_BACKEND}}/qrservice:${TAG}
+      - name: Set environment variables
+        run: |
+          echo "TAG=${GITHUB_SHA:0:7}" >> $GITHUB_ENV
+          echo "HARBOR_IMAGE=${{ secrets.HARBOR_URL }}/${{ secrets.HARBOR_PROJECT_BACKEND }}/qrservice" >> $GITHUB_ENV
 
-            - name: Cache Trivy DB
-              uses: actions/cache@v5
-              with:
-                  path: ~/.cache/trivy
-                  key: ${{ runner.os }}-trivy-db
-                  restore-keys: |
-                      ${{ runner.os }}-trivy-db
+      - name: Build Docker images
+        id: build_docker_images
+        run: |
+          echo -e "PORT=${{ secrets.DEV_PORT }}\nGRPC_PORT=${{ secrets.DEV_GRPC_PORT }}\nDB_USER=${{ secrets.DEV_POSTGRES_USER }}\nDB_PASSWORD=${{ secrets.DEV_POSTGRES_PASSWORD }}\nDB_HOST=${{ secrets.DEV_POSTGRES_HOST }}\nDB_PORT=${{ secrets.DEV_POSTGRES_PORT }}\nDB_NAME=${{ secrets.DEV_POSTGRES_DB }}\nSECRET_KEY=${{ secrets.DEV_JWT_SECRET }}\nMINIO_ENDPOINT=${{ secrets.DEV_MINIO_AWS_ENDPOINT }}\nMINIO_PORT=${{ secrets.DEV_MINIO_PORT }}\nMINIO_USE_SSL=${{ secrets.DEV_MINIO_AWSL_SSL }}\nMINIO_ACCESS_KEY=${{ secrets.DEV_MINIO_AWS_ACCESS }}\nMINIO_SECRET_KEY=${{ secrets.DEV_MINIO_AWS_SECRET }}\nMINIO_BUCKET=${{ secrets.DEV_MINIO_BUCKET_NAME }}\nQR_BASE_URL=${{ secrets.DEV_QR_BASE_URL }}\nHARBOR_URL=${{ secrets.HARBOR_URL }}\nHARBOR_PASSWORD=${{ secrets.HARBOR_PASSWORD }}\nHARBOR_USERNAME=${{ secrets.HARBOR_USERNAME }}\nHARBOR_PROJECT=${{ secrets.HARBOR_PROJECT_BACKEND}}\nTAG=${{env.TAG}}" > .env
+          echo "Building with TAG: ${{ env.TAG }}"
+          echo "Image: ${HARBOR_URL}/${HARBOR_PROJECT}/qrservice:${{ env.TAG }}"
+          docker-compose -f docker-compose.yaml build \
+            --build-arg TAG=${{ env.TAG }}
+        env:
+          HARBOR_URL: ${{ secrets.HARBOR_URL }}
+          HARBOR_PROJECT: ${{ secrets.HARBOR_PROJECT_BACKEND}}
+          HARBOR_USERNAME: ${{ secrets.HARBOR_USERNAME }}
+          HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
+          TAG: ${{ env.TAG }}
 
-            - name: Trivy Scan Docker images
-              uses: aquasecurity/trivy-action@master
-              with:
-                  image-ref: registry.heal.infoviz.co/${{ secrets.HARBOR_PROJECT_BACKEND}}/qrservice:${{env.TAG}}
-              timeout-minutes: 30
+      - name: Verify Docker image
+        id: verify_docker_image
+        run: docker images ${{ secrets.HARBOR_URL }}/${{ secrets.HARBOR_PROJECT_BACKEND}}/qrservice:${TAG}
 
-            - name: Push Docker images
-              id: push_docker_images
-              run: |
-                  docker-compose -f docker-compose.yaml push
-              env:
-                  HARBOR_URL: ${{ secrets.HARBOR_URL }}
-                  HARBOR_PROJECT: ${{ secrets.HARBOR_PROJECT_BACKEND}}
-                  HARBOR_USERNAME: ${{ secrets.HARBOR_USERNAME }}
-                  HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
-                  TAG: ${{ env.TAG }}
+      - name: Cache Trivy DB
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/trivy
+          key: ${{ runner.os }}-trivy-db
+          restore-keys: |
+            ${{ runner.os }}-trivy-db
 
-            # New CD steps start here for auto deployment
-            - name: Checkout GitOps repository
-              uses: actions/checkout@v5
-              with:
-                  repository: healthligence-s/healthligence-infra
-                  ref: main
-                  token: ${{ secrets.GITOPS_TOKEN }}
-                  path: healthligence-infra
+      - name: Trivy Scan Docker images
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: registry.heal.infoviz.co/${{ secrets.HARBOR_PROJECT_BACKEND}}/qrservice:${{env.TAG}}
+        timeout-minutes: 30
 
-            - name: Update Kubernetes manifests
-              run: |
-                  cd healthligence-infra/qr-service/qr-service-backend
+      - name: Push Docker images
+        id: push_docker_images
+        run: |
+          docker-compose -f docker-compose.yaml push
+        env:
+          HARBOR_URL: ${{ secrets.HARBOR_URL }}
+          HARBOR_PROJECT: ${{ secrets.HARBOR_PROJECT_BACKEND}}
+          HARBOR_USERNAME: ${{ secrets.HARBOR_USERNAME }}
+          HARBOR_PASSWORD: ${{ secrets.HARBOR_PASSWORD }}
+          TAG: ${{ env.TAG }}
 
-                  # Configure Git
-                  git config --global user.email "${{ secrets.GITOPS_EMAIL }}"
-                  git config --global user.name "${{ secrets.GITOPS_USERNAME }}"
+      # New CD steps start here for auto deployment
+      - name: Checkout GitOps repository
+        uses: actions/checkout@v5
+        with:
+          repository: healthligence-s/healthligence-infra
+          ref: main
+          token: ${{ secrets.GITOPS_TOKEN }}
+          path: healthligence-infra
 
-                  # Update only the image tag in the Deployment
-                  sed -i "s+registry.heal.infoviz.co/.*/qrservice:.*+registry.heal.infoviz.co/${{ secrets.HARBOR_PROJECT_BACKEND}}/qrservice:${TAG}+g" qr-service-backend.yaml
+      - name: Update Kubernetes manifests
+        run: |
+          cd healthligence-infra/qr-service/qr-service-backend
 
-                  # Commit and push changes
-                  git add qr-service-backend.yaml
-                  git commit -m "chore: Update qr service image tag to ${TAG}"
-                  git push origin main
-              env:
-                  TAG: ${{ env.TAG }}
+          # Configure Git
+          git config --global user.email "${{ secrets.GITOPS_EMAIL }}"
+          git config --global user.name "${{ secrets.GITOPS_USERNAME }}"
 
-            - name: Cleanup GitOps repository
-              if: always()
-              run: |
-                  rm -rf healthligence-infra
+          # Update only the image tag in the Deployment
+          sed -i "s+registry.heal.infoviz.co/.*/qrservice:.*+registry.heal.infoviz.co/${{ secrets.HARBOR_PROJECT_BACKEND}}/qrservice:${TAG}+g" qr-service-backend.yaml
 
-            - name: Logout from Harbor
-              id: logout_harbor
-              run: docker logout ${{ secrets.HARBOR_URL }}
+          # Commit and push changes
+          git add qr-service-backend.yaml
+          git commit -m "chore: Update qr service image tag to ${TAG}"
+          git push origin main
+        env:
+          TAG: ${{ env.TAG }}
+
+      - name: Cleanup GitOps repository
+        if: always()
+        run: |
+          rm -rf healthligence-infra
+
+      - name: Logout from Harbor
+        id: logout_harbor
+        run: docker logout ${{ secrets.HARBOR_URL }}
