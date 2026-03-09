@@ -1,4 +1,5 @@
 import kafka from "../../config/kafka";
+import logger from "../../utils/logger";
 
 const consumer = kafka.consumer({ groupId: "processor-group-dev" });
 
@@ -11,7 +12,7 @@ export async function startProcessorConsumer() {
     eachMessage: async ({ message }) => {
 
       const event = JSON.parse(message.value!.toString());
-      console.log("Consumer 2 processed event:", event.shortCode);
+      logger.info("Consumer 2 processed event:", event.shortCode);
     },
   });
 

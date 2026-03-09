@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import qrRoutes from "./routes/qrRoutes";
 import { resolveQRController } from "./controllers/resolver.controller";
 
-dotenv.config();
+dotenv.config({ quiet: true } as any);
 
 const app = express();
 

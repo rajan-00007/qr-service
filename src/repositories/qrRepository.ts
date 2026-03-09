@@ -1,4 +1,5 @@
 import pool from "../config/database";
+import { v4 as uuidv4 } from "uuid";
 
 interface QRData {
   shortCode: string;
@@ -11,14 +12,17 @@ interface QRData {
 
 export async function insertQR(data: QRData) {
 
+  const id = uuidv4();   // generate uuid
+
   const query = `
   INSERT INTO qr_profiles
-  (short_code, route_key, reference_id, external_url, metadata, qrimage_url)
-  VALUES ($1,$2,$3,$4,$5,$6)
+  (id, short_code, route_key, reference_id, external_url, metadata, qrimage_url)
+  VALUES ($1,$2,$3,$4,$5,$6,$7)
   RETURNING *;
   `;
 
   const values = [
+    id,
     data.shortCode,
     data.routeKey,
     data.referenceId || null,
@@ -31,7 +35,6 @@ export async function insertQR(data: QRData) {
 
   return result.rows[0];
 }
-
 export async function findByShortCode(shortCode: string) {
 
   const query = `

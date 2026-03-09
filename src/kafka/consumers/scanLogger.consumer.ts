@@ -1,4 +1,5 @@
 import kafka from "../../config/kafka";
+import logger from "../../utils/logger";
 
 const consumer = kafka.consumer({ groupId: "logger-group-dev" });
 
@@ -11,7 +12,7 @@ export async function startLoggerConsumer() {
     eachMessage: async ({ message }) => {
 
       const event = JSON.parse(message.value!.toString());
-      console.log("Consumer 1 logged event:", event.shortCode);
+      logger.info("Consumer 1 logged event:", event.shortCode);
     },
   });
 

@@ -2,6 +2,7 @@ import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import path from "path";
 import { createQR } from "../services/qr.service";
+import logger from "../utils/logger";
 
 const PROTO_PATH = path.join(__dirname, "qr.proto");
 
@@ -43,9 +44,9 @@ export function startGrpcServer() {
 
     server.bindAsync(`0.0.0.0:${GRPC_PORT}`, grpc.ServerCredentials.createInsecure(), (error, port) => {
         if (error) {
-            console.error("Failed to bind gRPC server:", error);
+            logger.error("Failed to bind gRPC server:", error);
             return;
         }
-        console.log(`gRPC Server running on PORT: ${port}`);
+        logger.info(`gRPC Server running on PORT: ${port}`);
     });
 }

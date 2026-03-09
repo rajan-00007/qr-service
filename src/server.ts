@@ -1,11 +1,12 @@
 import app from "./app";
 import { startGrpcServer } from "./grpc/grpcServer";
 import { startKafka } from "./kafka/startConsumers";
+import logger from "./utils/logger";
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-    console.log(`QR Service running on PORT: ${PORT}`);
+    logger.info(`QR Service running on PORT: ${PORT}`);
 });
 
 startGrpcServer();

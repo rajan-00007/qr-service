@@ -1,7 +1,7 @@
 import { Pool } from "pg";
 import dotenv from "dotenv";
 
-dotenv.config();
+dotenv.config({ quiet: true } as any);
 
 const pool = new Pool({
   user: process.env.DB_USER,
@@ -11,8 +11,8 @@ const pool = new Pool({
   database: process.env.DB_NAME,
 
   max: 20,
-  idleTimeoutMillis: 30000, 
-  connectionTimeoutMillis: 2000, 
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
 export default pool;
