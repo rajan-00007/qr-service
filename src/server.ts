@@ -11,7 +11,7 @@ app.listen(PORT, () => {
 startGrpcServer();
 
 /* startKafka().catch((err) => {
-    console.warn(" Ka fka failed to start (broker  may not be running) :", err.message) ;
+    console.warn(" Ka fka failed t o start (broker  may not be running) :", err.message) ;
     console.warn("The app will continue without Kafka consumers.");
 });
  */
